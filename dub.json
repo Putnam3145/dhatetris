@@ -1,0 +1,13 @@
+{
+	"authors": [
+		"Putnam"
+	],
+	"dependencies": {
+		"arsd-official:png": "~>8.0.0",
+		"arsd-official:simpledisplay": "~>8.0.0",
+		"arsd-official:ttf":"*"
+	},
+	"description": "A version of QNTM's hatetris written in D. Goes way deeper into the tree than the original, on account of being in a faster language.",
+	"license": "AGPL-3.0",
+	"name": "dhatetris"
+}

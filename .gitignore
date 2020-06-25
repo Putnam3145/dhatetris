@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/dhatetris
+dhatetris.so
+dhatetris.dylib
+dhatetris.dll
+dhatetris.a
+dhatetris.lib
+dhatetris-test-*
+*.exe
+*.o
+*.obj
+*.lst
