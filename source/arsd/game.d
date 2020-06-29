@@ -439,7 +439,15 @@ extern(C) @nogc nothrow {
 	enum GL_COMPILE = 0x1300;
 }
 
-
+/*
+	Hours of frustration culminated in this absolutely beautiful piece of code, that I hate so much.
+	Basically, I kept trying, over and over again, to get more modern OpenGL to link with
+	arsd.game, and it would. Not. Work. So instead I compromised: to make myself feel better,
+	I wrote this template that automates glNewList stuff.
+	This piece of code is great, I love it, it's pretty clean, its use is clear,
+	and it would be completely unnecessary if I were allowed to use
+	OpenGL features from 2004.
+*/
 template makeCachedPrimitive(alias func)
 {
 	private static uint _ourList;
