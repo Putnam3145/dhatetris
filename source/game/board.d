@@ -164,13 +164,11 @@ struct TetState
 	PieceToDrop piece;
 	Point piecePos;
 	Nullable!Hatetris parent;
-	TetState copy()
+	this(ref return scope TetState other)
 	{
-		TetState n;
-		n.board = Grid!Tetrimino(board[].dup,Size(board.width,board.height));
-		n.piece = piece;
-		n.piecePos = piecePos;
-		return n;
+		board = Grid!Tetrimino(other.board[].dup,Size(other.board.width,other.board.height));
+		piece = other.piece;
+		piecePos = other.piecePos;
 	}
 	bool pieceCanMove(Point givenPos,Point dir = Dir.S)
 	{
@@ -353,7 +351,7 @@ struct TetState
 		{
 			foreach(byte rot;0..4)
 			{
-                auto newState = copy();
+                auto newState = this;
 				newState.piecePos = Point(x,21);
 				newState.piece.rotation = cast(byte)rot;
 				if(newState.pieceCanMove(Point(0,0)))

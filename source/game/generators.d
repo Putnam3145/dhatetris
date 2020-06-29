@@ -64,130 +64,7 @@ class StandardsCompliantGenerator : TetriminoGenerator
     void draw() {}
 }
 
-class HatetrisBagGenerator : TetriminoGenerator
-{
-    import app : Hatetris;
-	private Hatetris parent;
-	private size_t curIdx;
-	private Tetrimino[14] _underlying;
-	import std.parallelism : task;
-	import std.typecons : Tuple, tuple;
-	private typeof(task(&actualGenerate)) working;
-	private bool[bool] _needsUpdate;
-	this(Hatetris newP)
-	{
-		import std.random : randomCover;
-		import std.array : array;
-		parent = newP;
-		_needsUpdate[false] = false;
-		_needsUpdate[true] = false;
-		_underlying[0..7] = tetriminosAsList.randomCover.array;
-		_underlying[7..14] = tetriminosAsList.randomCover.array;
-	}
-	private Tuple!(int,Tetrimino[]) generatePessimal(uint n)(Tetrimino[] remainingBag,TetState state)
-	{
-		static if(n == 1)
-		{
-			auto newState = state;
-			auto piece = remainingBag[0];
-			newState.piece.pieceType = piece;
-			newState.playOptimally();
-			return tuple(newState.towerHeight,[piece]);
-		}
-		else
-		{
-			import std.parallelism;
-			Tuple!(TetState,Tetrimino)[] scores;
-			scores.reserve(7);
-			foreach(piece;remainingBag)
-			{
-				auto newState = state.copy();
-				newState.parent.nullify();
-				newState.piece.pieceType = piece;
-				newState.playOptimally();
-				scores ~= tuple(newState,piece);
-			}
-			import std.algorithm.sorting : sort;
-			import std.range : takeExactly;	
-			import std.algorithm.comparison : max, min;
-			auto worst = scores.sort!("a[0] < b[0]").takeExactly(min(n,3,scores.length));
-			alias OurTask = typeof(task(&generatePessimal!(n-1),[Tetrimino.None],TetState.init));
-			Tuple!(OurTask,Tetrimino)[] tasks;
-			tasks.reserve(worst.length);
-			foreach(entry;worst)
-			{
-				import std.algorithm.mutation : remove;
-				import std.algorithm.searching : countUntil;
-				auto task = task(&generatePessimal!(n-1),remainingBag.dup.remove!((a) => a == entry[1]),entry[0]);
-				taskPool.put(task);
-				tasks ~= tuple(task,entry[1]);
-			}
-			import std.algorithm.searching : minIndex;
-			auto res = tasks[(minIndex!"a[0].workForce()[0]"(tasks))];
-			import std.range.primitives;
-			res[0].workForce()[1] ~= res[1];
-			return res[0].workForce();
-		}
-	}
-	private Tetrimino[7] actualGenerate()
-	{
-		import std.array : staticArray;
-		auto ret = generatePessimal!7(tetriminosAsList.dup,parent.state);
-		return ret[1].staticArray!7;
-	}
-	Tetrimino front()
-	{
-		immutable half = (curIdx > 6);
-		if(_needsUpdate[half])
-		{
-			auto slice = getHalf(half);
-			slice = working.workForce();
-			_needsUpdate[half] = false;
-		}
-		return _underlying[curIdx];
-	}
-	void popFront()
-	{
-		curIdx = (curIdx + 1 ) % 14;
-		if(curIdx % 7 == 0)
-		{
-			_needsUpdate[curIdx <= 6] = true;
-			import std.parallelism : task, taskPool;
-			working = cast(typeof(working))task(&actualGenerate);
-			taskPool.put(working);
-		}
-	}
-	size_t length()
-	{
-		return 4;
-	}
-	Tetrimino[] getHalf(bool which)
-	{
-		if(which)
-		{
-			return _underlying[7..14];
-		}
-		else
-		{
-			return _underlying[0..7];
-		}
-	}
-	Tetrimino peek(size_t n)
-	{
-		immutable realIdx = (curIdx+n)%14;
-		immutable half = realIdx>6;
-		if(_needsUpdate[half])
-		{
-			auto slice = getHalf(half);
-			slice = working.workForce();
-			_needsUpdate[half] = false;
-		}
-		return _underlying[realIdx];
-	}
-    void draw() {}
-}
-
-int tier(Tetrimino t)
+private pure @safe @nogc int tier(Tetrimino t)
 {
     final switch(t)
     {
@@ -317,7 +194,7 @@ class HatetrisGenerator : TetriminoGenerator
             {
                 foreach(piece;tetriminosAsList)
                 {
-                    auto newState = state.copy();
+                    auto newState = state;
                     newState.piece.pieceType = piece;
                     newState.playOptimally();
                     append(newState,piece);
@@ -362,7 +239,7 @@ class HatetrisGenerator : TetriminoGenerator
     }
 	void generateNext()
 	{
-        StateSeries state = new StateSeries(baseState.copy(),Tetrimino.None);
+        StateSeries state = new StateSeries(*baseState,Tetrimino.None);
         import std.datetime.stopwatch;
         StopWatch sw = StopWatch(AutoStart.yes);
         while(true)
